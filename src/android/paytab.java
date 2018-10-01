@@ -1,75 +1,81 @@
 package cordova.plugin.paytab;
 
-import org.apache.cordova.CordovaPlugin;
-import org.apache.cordova.CallbackContext;
 
+import org.apache.cordova.*;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import android.content.Intent;
+import android.content.Context;
+import android.content.SharedPreferences;
+import java.util.HashMap;
+import java.util.Map;
+import android.util.Log;
+import paytabs.project.PayTabActivity;
 
-/**
- * This class echoes a string called from JavaScript.
- */
 public class paytab extends CordovaPlugin {
 
-    @Override
-    public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException
-     {
-        if(action.equals("add"))
-        {
-            this.add(args, callbackContext);
-            return true;
-        }else if(action.equals("substract"))
-        {
-            this.substract(args, callbackContext);
-            return true;
-        }
-        return false;
+  CallbackContext callback;
+
+
+  @Override
+  public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
+    this.callback = callbackContext;
+    if (action.equals("add")) {
+
+
+      JSONObject args = data.getJSONObject(0);
+
+
+      Intent PayTabs = new Intent(this.cordova.getActivity(), PayTabActivity.class);
+
+      PayTabs.putExtra("pt_merchant_email", "kunwar.adeel@gmail.com");
+      PayTabs.putExtra("pt_secret_key", "F6oUQA0OMANTdh6MFNYiLbGRihq19HFPO3JFEJtqkgkxxrjceiv0ubSNsiPC0urOyatcUXCedXLLp5YDotETEwG7PvJP0bEym8Kh");
+      PayTabs.putExtra("pt_transaction_title", args.getString("transactionTitle"));
+      PayTabs.putExtra("pt_amount", args.getString("amount"));
+      PayTabs.putExtra("pt_currency_code", "SAR");
+      PayTabs.putExtra("pt_shared_prefs_name", "myapp_shared");
+      PayTabs.putExtra("pt_customer_email", args.getString("customer_email"));
+      PayTabs.putExtra("pt_customer_phone_number", args.getString("customer_phone_number"));
+      PayTabs.putExtra("pt_order_id", args.getString("order_id"));
+      PayTabs.putExtra("pt_product_name", args.getString("product_name"));
+      PayTabs.putExtra("pt_timeout_in_seconds", "100");
+      PayTabs.putExtra("pt_address_billing", args.getString("address_billing"));
+      PayTabs.putExtra("pt_city_billing", args.getString("city_billing"));
+      PayTabs.putExtra("pt_state_billing", args.getString("state_billing"));
+      PayTabs.putExtra("pt_country_billing", "SAU");
+      PayTabs.putExtra("pt_postal_code_billing", args.getString("postal_code_billing"));
+      PayTabs.putExtra("pt_address_shipping", args.getString("address_shipping"));
+      PayTabs.putExtra("pt_city_shipping", args.getString("city_shipping"));
+      PayTabs.putExtra("pt_state_shipping", args.getString("state_shipping"));
+      PayTabs.putExtra("pt_country_shipping", "SAU");
+      PayTabs.putExtra("pt_postal_code_shipping", args.getString("postal_code_shipping"));
+
+
+      cordova.startActivityForResult(this, PayTabs, 0);
     }
 
-   
 
-    private void add(JSONArray args, CallbackContext callback)
-    {
-        if(args != null)
-        {
-                try
-                {
-                     int p1 = Integer.parseInt(args.getJSONObject(0).getString("param1"));
-                     int p2 = Integer.parseInt(args.getJSONObject(0).getString("param2"));
-                       
-                     callback.success(""+ (p1+p2) );
-                          
-                }catch(Exception ex)
-                {
-                    callback.error("Something went wrong "  + ex);
-                }
-        }else
-        {
-            callback.error("Please donot pass null value");
-        }
-    }
+    return true;
+  }
 
 
-    private void substract(JSONArray args, CallbackContext callback)
-    {
-        if(args != null)
-        {
-                try
-                {
-                     int p1 = Integer.parseInt(args.getJSONObject(0).getString("param1"));
-                     int p2 = Integer.parseInt(args.getJSONObject(0).getString("param2"));
-                       
-                     callback.success(""+ (p1-p2) );
-                          
-                }catch(Exception ex)
-                {
-                    callback.error("Something went wrong "  + ex);
-                }
-        }else
-        {
-            callback.error("Please donot pass null value");
-        }
-    }
+  @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    Log.println(requestCode, "Hello", "Hello");
+    Log.println(resultCode, "Hello", "Hello");
+    SharedPreferences shared_prefs = cordova.getActivity().getApplicationContext().getSharedPreferences("myapp_shared", Context.MODE_PRIVATE);
+    String pt_response_code = shared_prefs.getString("pt_response_code", "");
+    String pt_transaction_id = shared_prefs.getString("pt_transaction_id", "");
 
+    Log.d("Response Code: ", pt_response_code);
+    Log.d("Response Code: ", pt_transaction_id);
+
+    Map<String, String> object = new HashMap<String, String>();
+    object.put("response_code", pt_response_code);
+    object.put("transaction_id", pt_transaction_id);
+
+    this.callback.sendPluginResult(new PluginResult(PluginResult.Status.OK, new JSONObject(object)));
+
+  }
 }
